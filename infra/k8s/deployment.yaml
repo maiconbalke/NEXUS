@@ -1,0 +1,58 @@
+# Define a versão da API do Kubernetes que estamos usando para este recurso. 'apps/v1' é o padrão para Deployments.
+apiVersion: apps/v1
+# Especifica o tipo de recurso que estamos criando no Kubernetes, neste caso, um Deployment (ele gerencia réplicas e atualizações).
+kind: Deployment
+# Contém dados que ajudam a identificar o objeto, como o seu nome.
+metadata:
+  # Nome do nosso Deployment. É como ele será chamado dentro do cluster.
+  name: nexus-api
+  # Rótulos (labels) aplicados a este Deployment para organização e filtros.
+  labels:
+    # Rótulo chave 'app' com o valor 'nexus-api'.
+    app: nexus-api
+# A especificação real do estado desejado para o Deployment.
+spec:
+  # Número de cópias (pods) da aplicação que o Kubernetes deve manter rodando ao mesmo tempo. (Alta disponibilidade)
+  replicas: 3
+  # Define como o Deployment encontra os Pods que ele deve gerenciar.
+  selector:
+    # Ele vai procurar por Pods que tenham exatamente esses rótulos.
+    matchLabels:
+      # O rótulo que ele procura: app=nexus-api.
+      app: nexus-api
+  # O modelo (template) que será usado para criar os novos Pods.
+  template:
+    # Metadados aplicados a cada Pod criado a partir deste modelo.
+    metadata:
+      # Rótulos que serão colocados nos Pods. Devem coincidir com o 'selector' logo acima.
+      labels:
+        # Rótulo app=nexus-api, essencial para o Deployment saber que este Pod a ele pertence.
+        app: nexus-api
+    # A especificação dos Pods propriamente dita (o que vai rodar lá dentro).
+    spec:
+      # Lista de containers que rodarão dentro de cada Pod.
+      containers:
+      # Nome do container dentro do Pod.
+      - name: nexus-api
+        # A imagem Docker que será usada.
+        image: nexus-api:latest
+        # Como a imagem está apenas local e não em um registry na nuvem, o Kubernetes não tentará baixá-la sempre.
+        imagePullPolicy: IfNotPresent
+        # Lista de portas que o container expõe.
+        ports:
+        # A porta em que a aplicação dentro do container está escutando (A API em Go responde na 8080).
+        - containerPort: 8080
+        # Configuração de recursos de CPU e Memória para o container (Essencial para FinOps e estabilidade do cluster).
+        resources:
+          # "requests" é o mínimo garantido que o reservamos. O Kubernetes só alocará o Pod em um node que tenha isso livre.
+          requests:
+            # Requisita no mínimo 128 Megabytes de memória RAM.
+            memory: "128Mi"
+            # Requisita no mínimo 250 milicores de CPU (o equivalente a 1/4 de um núcleo de CPU).
+            cpu: "250m"
+          # "limits" é o teto máximo absoluto. Impede a aplicação de monopolizar o servidor em caso de bugs ou picos de tráfego.
+          limits:
+            # Limite máximo de 256 Megabytes de memória. Se o container consumir mais que isso, ele é reiniciado ("OOMKilled").
+            memory: "256Mi"
+            # Limite máximo de 500 milicores (meio núcleo de CPU). Se tentar usar mais, a CPU será estrangulada, mas a aplicação não cai.
+            cpu: "500m"

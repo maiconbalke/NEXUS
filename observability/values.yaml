@@ -1,0 +1,58 @@
+# valores otimizados para instalar a Stack LGTM via Helm (lgtm-stack ou kube-prometheus-stack + loki/tempo)
+# Foco: Leveza local e integração OTel (OpenTelemetry)
+
+grafana:
+  enabled: true
+  adminPassword: "admin" # Senha Padrão
+  
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        # Métricas (Prometheus)
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus-server.observability.svc.cluster.local:80
+          access: proxy
+          isDefault: true
+
+        # Logs (Loki)
+        - name: Loki
+          type: loki
+          url: http://loki.observability.svc.cluster.local:3100
+          access: proxy
+
+        # Traces (Tempo - Recebe do Nexus-API via OTel)
+        - name: Tempo
+          type: tempo
+          url: http://tempo.observability.svc.cluster.local:3200
+          access: proxy
+          jsonData:
+            tracesToLogs:
+              datasourceUid: 'loki'
+              mapTagNamesEnabled: false
+              mappedTags: []
+              spanStartTimeShift: '-1h'
+              spanEndTimeShift: '1h'
+              filterByTraceID: true
+
+tempo:
+  enabled: true
+  # Habilitando o receiver OTLP para receber os traces do seu app GO
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+loki:
+  enabled: true
+  isDefault: false
+
+promtail:
+  enabled: true
+
+prometheus:
+  enabled: true

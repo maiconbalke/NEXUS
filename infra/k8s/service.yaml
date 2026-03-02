@@ -1,0 +1,24 @@
+# Versão da API core do Kubernetes. 'v1' é usada para Serviços e Pods.
+apiVersion: v1
+# O tipo de recurso: um Service, que serve para expor as portas da nossa aplicação para o mundo exterior ou para o cluster interno.
+kind: Service
+# Metadados do Service.
+metadata:
+  # Nome do Service. Podemos usar este nome para comunicar com a API dentro do cluster (funciona como um domínio DNS próprio).
+  name: nexus-api-service
+# Especificação de como este serviço deve se comportar.
+spec:
+  # Define o tipo de Service. 'LoadBalancer' cria um IP externo (na AWS/Google Cloud) para que pessoas de fora consigam acessar a API.
+  type: LoadBalancer
+  # O 'selector' diz ao Service para quais Pods ele deve redirecionar o tráfego recebido.
+  selector:
+    # Apenas enviará tráfego para os Pods que tenham o rótulo 'app: nexus-api' (são justamente as nossas 3 réplicas).
+    app: nexus-api
+  # Lista de portas que o Service irá disponibilizar.
+  ports:
+    # O protocolo de comunicação usado (TCP é o padrão para sites, APIs e requisições HTTP).
+    - protocol: TCP
+      # A 'port' (8081) é a porta que estamos expondo no balanceador de carga para o mundo acessar.
+      port: 8081
+      # A 'targetPort' (8080) é a porta alvo dentro do container, onde a nossa aplicação está efetivamente sendo executada e aguardando chamadas.
+      targetPort: 8080
